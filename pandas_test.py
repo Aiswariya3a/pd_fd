@@ -1,4 +1,4 @@
-import pandas as pd  # Use FireDucks pandas
+import pandas as pd  # Use pandas
 import time,json
 
 def save_metrics_to_json(metrics_data):
@@ -11,7 +11,7 @@ def save_metrics_to_json(metrics_data):
         data = {}
 
     # Add the new session data
-    session_key = f"session_{len(data) + 1}_pandas"
+    session_key = f"session_{len(data) + 1}_fireducks"
     data[session_key] = metrics_data
 
     # Save the updated data
@@ -138,8 +138,9 @@ def main():
     total_start = time.time()
     
     region_scores, institution_scores, overall_score, total_chunk_time, metrics_time = generate_engagement_report(csv_file)
-    
+
     save_metrics_to_json(total_chunk_time)
+    
     # Return region and institution scores as tables (Pandas DataFrames)
     total_end = time.time()
     print(f"=== Workflow Completed in {total_end - total_start:.2f} seconds ===")
@@ -153,7 +154,7 @@ def main():
     total_start = time.time()
     
     region_scores, institution_scores, overall_score, total_chunk_time, metrics_time = generate_engagement_report(csv_file)
-        
+    
     total_end = time.time()
     print(f"=== Workflow Completed in {total_end - total_start:.2f} seconds ===")
     return region_scores, institution_scores, overall_score, total_chunk_time, metrics_time

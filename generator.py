@@ -1,229 +1,198 @@
-import time
 import pandas as pd
-import fireducks.pandas as fd
 import numpy as np
-from tqdm import tqdm
-import os
-import gc
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
 
-def find_common_viewpoint_fireducks(data):
-    """Calculate median head pose for each zone using FireDucks."""
-    zones = ["left", "center", "right"]
-    zone_median_pose = {}
-
-    for zone in zones:
-        zone_data = data[data['zone'] == zone]
-        if not zone_data.empty:
-            median_pitch = zone_data['pose.pitch'].median()
-            median_yaw = zone_data['pose.yaw'].median()
-            median_roll = zone_data['pose.roll'].median()
-            zone_median_pose[zone] = {
-                "median_pitch": median_pitch._evaluate(),
-                "median_yaw": median_yaw._evaluate(),
-                "median_roll": median_roll._evaluate()
-            }
-
-    return zone_median_pose
-
-def find_common_viewpoint_pandas(data):
-    """Calculate median head pose for each zone using Pandas."""
-    zones = ["left", "center", "right"]
-    zone_median_pose = {}
-
-    for zone in zones:
-        zone_data = data[data['zone'] == zone]
-        if not zone_data.empty:
-            median_pitch = zone_data['pose.pitch'].median()
-            median_yaw = zone_data['pose.yaw'].median()
-            median_roll = zone_data['pose.roll'].median()
-            zone_median_pose[zone] = {
-                "median_pitch": median_pitch,
-                "median_yaw": median_yaw,
-                "median_roll": median_roll
-            }
-
-    return zone_median_pose
-
-def calculate_engagement_score(emotion):
-    """Calculate engagement score based on emotion."""
-    emotion_weights = {
-        "neutral": 20,
-        "happy": -5,
-        "sad": 20,
-        "angry": 5,
-        "surprise": -10,
-        "fear": -5,
-        "disgust": -30,
-        "NaN": -100
+class RegionalCollegeDataGenerator:
+    def __init__(self):
+        # Define regions and their colleges
+        self.college_data = {
+    'North': {
+        'IIT Delhi': {'size_range': (80, 120)},
+        'DTU Delhi': {'size_range': (90, 130)},
+        'NIT Kurukshetra': {'size_range': (85, 125)},
+        'IIIT Delhi': {'size_range': (70, 100)},
+        'Punjab Engineering College': {'size_range': (75, 115)},
+        'Jamia Millia Islamia': {'size_range': (70, 100)},
+        'IIT Ropar': {'size_range': (75, 115)},
+        'Chandigarh University': {'size_range': (80, 110)},
+        'Jaypee Institute of Information Technology': {'size_range': (70, 100)},
+        'UPES Dehradun': {'size_range': (65, 95)}
+    },
+    'South': {
+        'IIT Madras': {'size_range': (85, 125)},
+        'NIT Trichy': {'size_range': (90, 130)},
+        'VIT Vellore': {'size_range': (100, 150)},
+        'PSG Tech Coimbatore': {'size_range': (80, 120)},
+        'CEG Chennai': {'size_range': (85, 125)},
+        'SRM University': {'size_range': (90, 140)},
+        'Amrita Vishwa Vidyapeetham': {'size_range': (80, 120)},
+        'Manipal Institute of Technology': {'size_range': (85, 125)},
+        'IIT Hyderabad': {'size_range': (90, 130)},
+        'Andhra University College of Engineering': {'size_range': (75, 115)}
+    },
+    'East': {
+        'IIT Kharagpur': {'size_range': (85, 125)},
+        'NIT Durgapur': {'size_range': (80, 120)},
+        'KIIT Bhubaneswar': {'size_range': (90, 130)},
+        'Jadavpur University': {'size_range': (85, 125)},
+        'BIT Mesra': {'size_range': (75, 115)},
+        'IIT Guwahati': {'size_range': (85, 125)},
+        'NIT Rourkela': {'size_range': (80, 120)},
+        'Assam Engineering College': {'size_range': (70, 100)},
+        'Heritage Institute of Technology': {'size_range': (65, 95)},
+        'Sikkim Manipal Institute of Technology': {'size_range': (60, 90)}
+    },
+    'West': {
+        'IIT Bombay': {'size_range': (85, 125)},
+        'VJTI Mumbai': {'size_range': (80, 120)},
+        'BITS Pilani': {'size_range': (90, 130)},
+        'NIT Surat': {'size_range': (85, 125)},
+        'COEP Pune': {'size_range': (80, 120)},
+        'IIT Gandhinagar': {'size_range': (75, 115)},
+        'DAIICT Gandhinagar': {'size_range': (70, 100)},
+        'SPIT Mumbai': {'size_range': (65, 95)},
+        'Symbiosis Institute of Technology': {'size_range': (70, 100)},
+        'LNMIIT Jaipur': {'size_range': (75, 110)}
     }
-    return emotion_weights.get(emotion, 0)
-
-def process_with_fireducks(csv_file, chunk_size=50000):
-    """Process the dataset using FireDucks."""
-    t_start = time.time()
-    print("\nStarting FireDucks processing...")
-    
-    chunks = []
-    total_rows = 0
-    
-    # Read and process chunks
-    reader = fd.read_csv(csv_file, chunksize=chunk_size)
-    for chunk in tqdm(reader, desc="Processing chunks with FireDucks"):
-        # Optimize data types and calculate scores in one chain
-        processed_chunk = (chunk
-            .assign(
-                zone=lambda x: x['zone'].astype('category'),
-                emotion=lambda x: x['emotion'].astype('category'),
-                engagement_score=lambda x: x['emotion'].map(calculate_engagement_score)
-            )
-        )._evaluate()
-        
-        chunks.append(processed_chunk)
-        total_rows += len(processed_chunk)
-    
-    t_chunk = time.time()
-    chunk_time = t_chunk - t_start
-    print(f"Chunk processing completed. Time taken: {chunk_time:.2f} seconds")
-    
-    # Combine chunks and calculate metrics
-    print("Calculating final metrics...")
-    combined_data = fd.concat(chunks)._evaluate()
-    
-    metrics = {
-        'region_scores': combined_data.groupby('region')['engagement_score'].mean()._evaluate(),
-        'institution_scores': combined_data.groupby('college_name')['engagement_score'].mean()._evaluate(),
-        'overall_score': combined_data['engagement_score'].mean()._evaluate(),
-        'total_rows': total_rows,
-        'chunk_time': chunk_time,
-        'total_time': time.time() - t_start
     }
-    
-    print(f"FireDucks processing completed. Total time: {metrics['total_time']:.2f} seconds")
-    return metrics
 
-def process_with_pandas(csv_file, chunk_size=50000):
-    """Process the dataset using Pandas."""
-    t_start = time.time()
-    print("\nStarting Pandas processing...")
-    
-    chunks = []
-    total_rows = 0
-    
-    # Read and process chunks
-    reader = pd.read_csv(csv_file, chunksize=chunk_size)
-    for chunk in tqdm(reader, desc="Processing chunks with Pandas"):
-        # Process chunk
-        chunk['zone'] = chunk['zone'].astype('category')
-        chunk['emotion'] = chunk['emotion'].astype('category')
-        chunk['engagement_score'] = chunk['emotion'].map(calculate_engagement_score)
-        
-        chunks.append(chunk)
-        total_rows += len(chunk)
-    
-    t_chunk = time.time()
-    chunk_time = t_chunk - t_start
-    print(f"Chunk processing completed. Time taken: {chunk_time:.2f} seconds")
-    
-    # Combine chunks and calculate metrics
-    print("Calculating final metrics...")
-    combined_data = pd.concat(chunks)
-    
-    metrics = {
-        'region_scores': combined_data.groupby('region')['engagement_score'].mean(),
-        'institution_scores': combined_data.groupby('college_name')['engagement_score'].mean(),
-        'overall_score': combined_data['engagement_score'].mean(),
-        'total_rows': total_rows,
-        'chunk_time': chunk_time,
-        'total_time': time.time() - t_start
-    }
-    
-    print(f"Pandas processing completed. Total time: {metrics['total_time']:.2f} seconds")
-    return metrics
 
-def save_comparison_report(fd_metrics, pd_metrics, output_path=None):
-    """Save detailed comparison report."""
-    if output_path is None:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = f"engagement_comparison_report_{timestamp}.txt"
-    
-    print(f"\nSaving comparison report to {output_path}")
-    
-    with open(output_path, "w") as file:
-        file.write("=== Engagement Analysis Performance Comparison ===\n")
-        file.write(f"Report generated at: {datetime.now()}\n\n")
-        
-        # Performance metrics
-        file.write("=== Performance Metrics ===\n")
-        file.write(f"Total rows processed: {fd_metrics['total_rows']}\n\n")
-        
-        file.write("FireDucks:\n")
-        file.write(f"- Chunk processing time: {fd_metrics['chunk_time']:.2f} seconds\n")
-        file.write(f"- Total processing time: {fd_metrics['total_time']:.2f} seconds\n\n")
-        
-        file.write("Pandas:\n")
-        file.write(f"- Chunk processing time: {pd_metrics['chunk_time']:.2f} seconds\n")
-        file.write(f"- Total processing time: {pd_metrics['total_time']:.2f} seconds\n\n")
-        
-        # Calculate performance difference
-        time_diff = pd_metrics['total_time'] - fd_metrics['total_time']
-        speedup = pd_metrics['total_time'] / fd_metrics['total_time']
-        file.write(f"Performance difference: {abs(time_diff):.2f} seconds\n")
-        file.write(f"Speedup ratio: {speedup:.2f}x\n\n")
-        
-        # Results comparison
-        file.write("=== Results Comparison ===\n")
-        file.write("Region-wise Engagement Scores:\n")
-        file.write("FireDucks:\n")
-        file.write(fd_metrics['region_scores'].to_string())
-        file.write("\n\nPandas:\n")
-        file.write(pd_metrics['region_scores'].to_string())
-        
-        file.write("\n\nInstitution-wise Engagement Scores:\n")
-        file.write("FireDucks:\n")
-        file.write(fd_metrics['institution_scores'].to_string())
-        file.write("\n\nPandas:\n")
-        file.write(pd_metrics['institution_scores'].to_string())
-        
-        file.write("\n\nOverall Engagement Scores:\n")
-        file.write(f"FireDucks: {fd_metrics['overall_score']:.4f}\n")
-        file.write(f"Pandas: {pd_metrics['overall_score']:.4f}\n")
-        
-        # Verify results match
-        file.write("\n=== Results Verification ===\n")
-        metrics_match = {
-            'region_scores': np.allclose(fd_metrics['region_scores'], pd_metrics['region_scores']),
-            'institution_scores': np.allclose(fd_metrics['institution_scores'], pd_metrics['institution_scores']),
-            'overall_score': np.allclose(fd_metrics['overall_score'], pd_metrics['overall_score'])
+        # Emotion probabilities (based on typical classroom behavior)
+        self.emotion_probs = {
+            'neutral': 0.50,    # Most common
+            'happy': 0.15,      # Positive engagement
+            'sad': 0.10,        # Some disengagement
+            'angry': 0.05,      # Rare
+            'surprise': 0.10,   # Occasional
+            'fear': 0.05,       # Rare
+            'disgust': 0.05     # Rare
         }
-        
-        for metric, matches in metrics_match.items():
-            file.write(f"{metric} match: {matches}\n")
+
+        # Zone distribution (center tends to have more students)
+        self.zone_probs = {
+            'left': 0.30,
+            'center': 0.40,
+            'right': 0.30
+        }
+
+    def generate_student_data(self, num_records=500000):
+        """Generate mock face detection data for students across regions and colleges."""
+        data = []
+        student_count = 0
+
+        # Calculate records per region (approximately equal distribution)
+        records_per_region = num_records // len(self.college_data)
+
+        for region, colleges in self.college_data.items():
+            records_remaining = records_per_region
+            
+            while records_remaining > 0:
+                # Randomly select a college from the region
+                college_name = random.choice(list(colleges.keys()))
+                college_info = colleges[college_name]
+                
+                # Generate a batch of students for this college
+                batch_size = min(
+                    random.randint(*college_info['size_range']),
+                    records_remaining
+                )
+                
+                # Generate data for each student in the batch
+                for _ in range(batch_size):
+                    student_count += 1
+                    
+                    # Generate base data
+                    zone = random.choices(
+                        list(self.zone_probs.keys()),
+                        weights=list(self.zone_probs.values())
+                    )[0]
+                    
+                    emotion = random.choices(
+                        list(self.emotion_probs.keys()),
+                        weights=list(self.emotion_probs.values())
+                    )[0]
+
+                    # Generate position based on zone
+                    if zone == 'left':
+                        x1 = random.randint(100, 300)
+                    elif zone == 'center':
+                        x1 = random.randint(301, 600)
+                    else:  # right
+                        x1 = random.randint(601, 800)
+
+                    y1 = random.randint(100, 400)
+                    width = random.randint(100, 150)
+                    height = random.randint(120, 180)
+                    x2 = x1 + width
+                    y2 = y1 + height
+                    center_x = x1 + width // 2
+                    center_y = y1 + height // 2
+
+                    # Generate pose data based on zone
+                    if zone == 'left':
+                        yaw = random.normalvariate(15, 5)  # Looking slightly right
+                    elif zone == 'center':
+                        yaw = random.normalvariate(0, 5)   # Looking straight
+                    else:  # right
+                        yaw = random.normalvariate(-15, 5) # Looking slightly left
+
+                    data.append({
+                        'face_id': f'face_{student_count}',
+                        'region': region,
+                        'college_name': college_name,
+                        'zone': zone,
+                        'emotion': emotion,
+                        'confidence': round(random.uniform(0.85, 1.0), 2),
+                        'created_at': (
+                            datetime.now() + 
+                            timedelta(
+                                minutes=random.randint(-120, 120)
+                            )
+                        ).strftime('%Y-%m-%d %H:%M:%S'),
+                        'position.x1': x1,
+                        'position.y1': y1,
+                        'position.x2': x2,
+                        'position.y2': y2,
+                        'position.center_x': center_x,
+                        'position.center_y': center_y,
+                        'pose.pitch': round(random.normalvariate(5, 10), 2),  # Slight upward tilt
+                        'pose.yaw': round(yaw, 2),
+                        'pose.roll': round(random.normalvariate(0, 5), 2),  # Mostly level heads
+                        'pose.confidence': round(random.uniform(0.9, 1.0), 2)
+                    })
+                
+                records_remaining -= batch_size
+
+        return pd.DataFrame(data)
 
 def main():
-    csv_file = "large_dataset_new.csv"
-    chunk_size = 50000
+    # Initialize the generator
+    generator = RegionalCollegeDataGenerator()
     
-    print("=== Starting Engagement Analysis Performance Comparison ===")
-    print(f"Input file: {csv_file}")
-    print(f"Chunk size: {chunk_size}")
+    # Generate 500,000 records
+    print("Generating 50,00,000 records of face data...")
+    df = generator.generate_student_data(5000000)
     
-    # Clear memory before starting
-    gc.collect()
+    # Save to CSV
+    output_file = "large_dataset_new.csv"
+    df.to_csv(output_file, index=False)
+    print(f"\nData saved to {output_file}")
     
-    # Run FireDucks version
-    fd_metrics = process_with_fireducks(csv_file, chunk_size)
+    # Print summary statistics
+    print("\nData Summary:")
+    print("-" * 50)
+    print("\nRecords per region:")
+    print(df['region'].value_counts())
     
-    # Clear memory between runs
-    gc.collect()
+    print("\nRecords per college (top 5):")
+    print(df['college_name'].value_counts().head())
     
-    # Run Pandas version
-    pd_metrics = process_with_pandas(csv_file, chunk_size)
+    print("\nEmotion distribution:")
+    print(df['emotion'].value_counts(normalize=True).round(3) * 100, "%")
     
-    # Save comparison report
-    save_comparison_report(fd_metrics, pd_metrics)
-    
-    print("\nAnalysis completed!")
+    print("\nZone distribution:")
+    print(df['zone'].value_counts(normalize=True).round(3) * 100, "%")
 
 if __name__ == "__main__":
     main()
