@@ -311,3 +311,17 @@ h2, h3 {
     font-size: 1.1em;
     color: #555;
 }
+
+canvas {
+    margin: 20px;
+}
+
+.chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 80%;  /* Adjust width */
+    max-width: 600px;  /* Limit max width */
+    margin: 0 auto;
+}

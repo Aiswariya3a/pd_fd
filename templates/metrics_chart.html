@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Metrics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+    <h1>Real-Time Metrics Chart</h1>
+    </header>
+    <div class="chart-container">
+        <h2>FireDucks vs Pandas Processing Time</h2>
+        <canvas id="metricsChart" width="400" height="250"></canvas> <!-- Reduced size -->
+    </div>
+
+    <script>
+        async function fetchMetrics() {
+            const response = await fetch('/get_metrics');
+            const data = await response.json();
+            return data;
+        }
+
+        function updateChart(chart, fireducksLabels, fireducksData, pandasLabels, pandasData) {
+            chart.data.labels = fireducksLabels;
+            chart.data.datasets[0].data = fireducksData;
+            chart.data.datasets[1].data = pandasData;
+            chart.update();
+        }
+
+        async function renderChart() {
+            const metrics = await fetchMetrics();
+
+            // FireDucks Metrics
+            const fireducksLabels = Object.keys(metrics.fireducks);
+            const fireducksData = fireducksLabels.map(session => metrics.fireducks[session].processing_time);
+
+            // Pandas Metrics
+            const pandasLabels = Object.keys(metrics.pandas);
+            const pandasData = pandasLabels.map(session => metrics.pandas[session].processing_time);
+
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            const metricsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fireducksLabels,  // Use FireDucks session IDs as labels
+                    datasets: [
+                        {
+                            label: 'FireDucks Processing Time',
+                            data: fireducksData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Pandas Processing Time',
+                            data: pandasData,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Update the chart every 5 seconds
+            setInterval(async () => {
+                const newMetrics = await fetchMetrics();
+
+                const newFireducksLabels = Object.keys(newMetrics.fireducks);
+                const newFireducksData = newFireducksLabels.map(session => newMetrics.fireducks[session].processing_time);
+
+                const newPandasLabels = Object.keys(newMetrics.pandas);
+                const newPandasData = newPandasLabels.map(session => newMetrics.pandas[session].processing_time);
+
+                updateChart(metricsChart, newFireducksLabels, newFireducksData, newPandasLabels, newPandasData);
+            }, 5000);
+        }
+
+        renderChart();
+    </script>
+</body>
+</html>

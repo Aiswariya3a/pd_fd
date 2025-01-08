@@ -1,22 +1,44 @@
-import pandas as pd  # Use pandas
-import time,json
+import pandas as pd  # Use FireDucks pandas
+import time
+import json
 
-def save_metrics_to_json(metrics_data):
-    """Save the processing times to a JSON file."""
-    filename="static/metrics_history.json"
+
+def save_metrics_to_json(metrics_data, session_type="pandas"):
+    """Save the processing times to a JSON file, with separate session counters for FireDucks and Pandas."""
+    filename = "static/metrics_history.json"
+    
     try:
         with open(filename, "r") as f:
             data = json.load(f)  # Load the existing metrics data
+            print("Loaded existing data:", data)
     except FileNotFoundError:
-        data = {}
+        print(f"File {filename} not found. Creating a new file.")
+        data = {
+            "fireducks": {},
+            "pandas": {}
+        }
 
-    # Add the new session data
-    session_key = f"session_{len(data) + 1}_fireducks"
-    data[session_key] = metrics_data
-
+    # Determine the session counter for the respective type
+    if session_type == "fireducks":
+        session_id = len(data["fireducks"]) + 1
+        session_key = f"session_{session_id}"
+        data["fireducks"][session_key] = {"processing_time": metrics_data}
+    elif session_type == "pandas":
+        session_id = len(data["pandas"]) + 1
+        session_key = f"session_{session_id}"
+        data["pandas"][session_key] = {"processing_time": metrics_data}
+    else:
+        print(f"Unknown session type: {session_type}")
+        return
+    
     # Save the updated data
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
+    try:
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=4)
+            print(f"Metrics data saved successfully to {filename}.")
+    except Exception as e:
+        print(f"Failed to write to {filename}: {e}")
+
 
 def find_common_viewpoint(data):
     """Calculate median head pose for each zone."""
@@ -37,6 +59,7 @@ def find_common_viewpoint(data):
 
     return zone_median_pose
 
+
 def calculate_engagement(chunk, zone_median_pose):
     """Calculate engagement scores for a chunk."""
     emotion_weights = {
@@ -50,111 +73,80 @@ def calculate_engagement(chunk, zone_median_pose):
         "NaN": -100
     }
 
-    # Convert FireDucks DataFrame to pandas DataFrame for iteration
-    chunk_pd = chunk
-    scores = []
+    # Map emotion weights
+    chunk["emotion_weight"] = chunk["emotion"].map(emotion_weights).fillna(0)
+    chunk["weighted_emotion"] = chunk["emotion_weight"] * chunk["confidence"]
 
-    for _, row in chunk_pd.iterrows():
-        emotion = row["emotion"]
-        confidence = row["confidence"]
-        emotion_weight = emotion_weights.get(emotion, 0) * confidence
+    # Retrieve the median pose values for each zone
+    zone_median_df = pd.DataFrame(zone_median_pose).T.reset_index().rename(columns={
+        "index": "zone",
+        "median_pitch": "zone_median_pitch",
+        "median_yaw": "zone_median_yaw",
+        "median_roll": "zone_median_roll"
+    })
+    chunk = chunk.merge(zone_median_df, on="zone", how="left")
 
-        zone_pose = zone_median_pose.get(row["zone"], {"median_pitch": 0, "median_yaw": 0})
-        pitch_deviation = abs(row["pose.pitch"] - zone_pose["median_pitch"])
-        yaw_deviation = abs(row["pose.yaw"] - zone_pose["median_yaw"])
+    # Calculate deviations
+    chunk["pitch_deviation"] = (chunk["pose.pitch"] - chunk["zone_median_pitch"]).abs().clip(upper=100)
+    chunk["yaw_deviation"] = (chunk["pose.yaw"] - chunk["zone_median_yaw"]).abs().clip(upper=100)
 
-        # Handle extreme deviations
-        yaw_deviation = min(yaw_deviation, 100)
-        pitch_deviation = min(pitch_deviation, 100)
+    # Normalize scores
+    max_deviation = 45
+    chunk["yaw_score"] = (100 - (chunk["yaw_deviation"] / max_deviation * 100)).clip(lower=0)
+    chunk["pitch_score"] = (100 - (chunk["pitch_deviation"] / max_deviation * 100)).clip(lower=0)
 
-        # Normalize scores
-        max_deviation = 45
-        yaw_score = max(0, 100 - (yaw_deviation / max_deviation) * 100)
-        pitch_score = max(0, 100 - (pitch_deviation / max_deviation) * 100)
+    # Aggregate scores
+    chunk["head_pose_score"] = (chunk["yaw_score"] * 0.7) + (chunk["pitch_score"] * 0.3)
+    chunk["normalized_emotion"] = ((chunk["weighted_emotion"] + 50).clip(lower=0, upper=100))
+    chunk["engagement_score"] = ((chunk["head_pose_score"] * 0.8) + (chunk["normalized_emotion"] * 0.2)).clip(lower=0, upper=100)
 
-        # Aggregate scores
-        head_pose_score = (yaw_score * 0.7) + (pitch_score * 0.3)
-        normalized_emotion = max(min(emotion_weight + 50, 100), 0)  # Clamp value between 0 and 100
-        total_engagement_score = max(min((head_pose_score * 0.8) + (normalized_emotion * 0.2), 100), 0)
+    return chunk[["engagement_score", "zone", "region", "college_name"]]
 
-        scores.append(total_engagement_score)
-
-    # Convert back to FireDucks DataFrame
-    result = chunk.copy()
-    result['engagement_score'] = scores
-    return result
 
 def generate_engagement_report(csv_file):
-    """Process the dataset and calculate engagement scores."""
-    chunk_size = 50000
-    processed_chunks = []
-    
+    """Process the entire dataset and calculate engagement scores."""
     start_time = time.time()
     print("=== Starting Engagement Report Generation ===\n")
 
-    # Step 1: Reading the CSV file in chunks
-    t0 = time.time()
-    print("Reading CSV file in chunks...")
-    
-    for chunk in pd.read_csv(csv_file, chunksize=chunk_size):
-        # Step 2: Optimizing data types
-        chunk['zone'] = chunk['zone'].astype('category')
-        chunk['emotion'] = chunk['emotion'].astype('category')
+    # Step 1: Reading the entire CSV file
+    print("Reading the entire CSV file...")
+    data = pd.read_csv(csv_file)
 
-        # Step 3: Finding common viewpoints for the chunk
-        t1 = time.time()
-        print(f"Processing chunk of size {len(chunk)}...")
-        zone_median_pose = find_common_viewpoint(chunk)
+    # Step 2: Optimizing data types
+    data['zone'] = data['zone'].astype('category')
+    data['emotion'] = data['emotion'].astype('category')
 
-        # Step 4: Calculating engagement scores for the chunk
-        processed_chunk = calculate_engagement(chunk, zone_median_pose)
-        processed_chunks.append(processed_chunk)
-        t2 = time.time()
-        print(f"Chunk processed in {t2 - t1:.2f} seconds.")
-    
-    total_chunk_processing_time = time.time() - t0
-    print(f"\nCompleted reading and processing chunks in {total_chunk_processing_time:.2f} seconds.\n")
-    
-    # Step 5: Combining all chunks and calculating final metrics
-    print("Combining chunks and calculating final metrics...")
-    t3 = time.time()
-    combined_data = pd.concat(processed_chunks)
-    
-    # Calculate the average engagement scores
-    final_region_scores = combined_data.groupby('region')['engagement_score'].mean().sort_values(ascending=False)
-    final_institution_scores = combined_data.groupby('college_name')['engagement_score'].mean().sort_values(ascending=False)
-    final_overall_score = combined_data['engagement_score'].mean()
-    
-    t4 = time.time()
-    print(f"Final metrics calculated in {t4 - t3:.2f} seconds.\n")
-    metrics_time = t4 - t3
-    
-    return final_region_scores, final_institution_scores, final_overall_score, total_chunk_processing_time, metrics_time
+    # Step 3: Finding common viewpoints for the dataset
+    print("Calculating common viewpoints...")
+    zone_median_pose = find_common_viewpoint(data)
+
+    # Step 4: Calculating engagement scores for the entire dataset
+    print("Calculating engagement scores...")
+    processed_data = calculate_engagement(data, zone_median_pose)
+
+    # Step 5: Calculating final metrics
+    print("Calculating final metrics...")
+    final_region_scores = processed_data.groupby('region')['engagement_score'].mean().sort_values(ascending=False)
+    final_institution_scores = processed_data.groupby('college_name')['engagement_score'].mean().sort_values(ascending=False)
+    final_overall_score = processed_data['engagement_score'].mean()
+
+    total_processing_time = time.time() - start_time
+    print(f"Completed processing in {total_processing_time:.2f} seconds.\n")
+    save_metrics_to_json(total_processing_time)
+
+    return final_region_scores, final_institution_scores, final_overall_score, total_processing_time
+
 
 def main():
     csv_file = "large_dataset_new.csv"
 
     print("=== Starting Engagement Report Workflow ===")
     total_start = time.time()
-    
-    region_scores, institution_scores, overall_score, total_chunk_time, metrics_time = generate_engagement_report(csv_file)
+
+    region_scores, institution_scores, overall_score, total_chunk_time = generate_engagement_report(csv_file)
 
     save_metrics_to_json(total_chunk_time)
-    
-    # Return region and institution scores as tables (Pandas DataFrames)
+
     total_end = time.time()
     print(f"=== Workflow Completed in {total_end - total_start:.2f} seconds ===")
-    return region_scores, institution_scores, overall_score, total_chunk_time, metrics_time
-
-# Run the complete workflow
-def main():
-    csv_file = "large_dataset_new.csv"
-
-    print("=== Starting Engagement Report Workflow ===")
-    total_start = time.time()
-    
-    region_scores, institution_scores, overall_score, total_chunk_time, metrics_time = generate_engagement_report(csv_file)
-    
-    total_end = time.time()
-    print(f"=== Workflow Completed in {total_end - total_start:.2f} seconds ===")
-    return region_scores, institution_scores, overall_score, total_chunk_time, metrics_time
+    return region_scores, institution_scores, overall_score, total_chunk_time
