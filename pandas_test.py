@@ -18,6 +18,9 @@ def save_metrics_to_json(metrics_data, session_type="pandas"):
             "pandas": {}
         }
 
+    if "pandas" not in data:
+        data["pandas"] = {}
+
     # Determine the session counter for the respective type
     if session_type == "fireducks":
         session_id = len(data["fireducks"]) + 1

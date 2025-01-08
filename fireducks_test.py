@@ -2,22 +2,6 @@ import fireducks.pandas as pd  # Use FireDucks pandas
 import time
 import json
 
-
-# def save_metrics_to_json(metrics_data):
-#     """Save the processing times to a JSON file."""
-#     filename = "static/metrics_history.json"
-#     try:
-#         with open(filename, "r") as f:
-#             data = json.load(f)  # Load the existing metrics data
-#             print("Loaded existing data:", data)
-#     except FileNotFoundError:
-#         print(f"File {filename} not found. Creating a new file.")
-#         data = {}
-
-#     # Add the new session data
-#     session_key = f"session_{len(data) + 1}"
-#     data[session_key] = {"type": "fireducks", "processing_time": metrics_data}
-
 def save_metrics_to_json(metrics_data, session_type="fireducks"):
     """Save the processing times to a JSON file, with separate session counters for FireDucks and Pandas."""
     filename = "static/metrics_history.json"
@@ -32,6 +16,10 @@ def save_metrics_to_json(metrics_data, session_type="fireducks"):
             "fireducks": {},
             "pandas": {}
         }
+
+    if "fireducks" not in data:
+        data["fireducks"] = {}
+    
 
     # Determine the session counter for the respective type
     if session_type == "fireducks":
