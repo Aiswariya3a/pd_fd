@@ -32,14 +32,15 @@ def get_metrics():
     # Separate FireDucks and Pandas metrics
     fireducks_data = [
         {"session": key, "processing_time": value["processing_time"]}
-        for key, value in data.items() if value["type"] == "fireducks"
+        for key, value in data.get("fireducks", {}).items()
     ]
     pandas_data = [
         {"session": key, "processing_time": value["processing_time"]}
-        for key, value in data.items() if value["type"] == "pandas"
+        for key, value in data.get("pandas", {}).items()
     ]
 
     return jsonify({"fireducks": fireducks_data, "pandas": pandas_data})
+
 
 @app.route('/metrics_chart')
 def metrics_chart():

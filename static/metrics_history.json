@@ -1,3 +1,15 @@
 {
-
+    "fireducks": {
+        "session_1": {
+            "processing_time": 12.633243799209595
+        }
+    },
+    "pandas": {
+        "session_1": {
+            "processing_time": 16.884904623031616
+        },
+        "session_2": {
+            "processing_time": 25.53805661201477
+        }
+    }
 }
