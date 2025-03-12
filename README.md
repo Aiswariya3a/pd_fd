@@ -88,22 +88,23 @@ Below are some example screenshots illustrating the reports and the dashboard:
 - **Dashboard**  
   ![Dashboard](media/dashboard.png)
 
-- **Polars Report Example**  
-  ![Polars Report](media/polars.png)
+- **FireDucks Report Example**  
+  ![FireDucks Report](media/fireducks.png)
 
 - **Pandas Report Example**  
   ![Pandas Report](media/pandas.png)
 
-- **FireDucks Report Example**  
-  ![FireDucks Report](media/fireducks.png)
+- **Polars Report Example**  
+  ![Polars Report](media/polars.png)
+
 
 Each report displays region-wise, institution-wise, and overall engagement metrics, along with processing times for each library.
 
 ## Conclusion
 
-By integrating **pandas**, **FireDucks**, and **Polars** into the same workflow, you can easily compare performance characteristics and choose the most efficient tool for your data processing needs. This project demonstrates how each library handles:
+By integrating **FireDucks**,**pandas**, and **Polars** into the same workflow, you can easily compare performance characteristics and choose the most efficient tool for your data processing needs. This project demonstrates how each library handles:
 
-- Large data ingestion and chunk processing
+- Large data ingestion
 - Aggregation and grouping operations
 - Calculation of engagement metrics for a classroom monitoring system
 
