@@ -1,5 +1,6 @@
 /venv
 large_dataset_new.csv
 large_dataset_new.zip
+/__pycache__
 
 

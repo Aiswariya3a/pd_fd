@@ -44,6 +44,12 @@
         },
         "session_15": {
             "processing_time": 9.861858606338501
+        },
+        "session_16": {
+            "processing_time": 10.759119987487793
+        },
+        "session_17": {
+            "processing_time": 12.814305067062378
         }
     },
     "pandas": {
@@ -85,6 +91,12 @@
         },
         "session_13": {
             "processing_time": 24.054950714111328
+        },
+        "session_14": {
+            "processing_time": 23.65217161178589
+        },
+        "session_15": {
+            "processing_time": 33.824506521224976
         }
     },
     "polars": {
@@ -126,6 +138,12 @@
         },
         "session_13": {
             "processing_time": 45.720422983169556
+        },
+        "session_14": {
+            "processing_time": 61.15607047080994
+        },
+        "session_15": {
+            "processing_time": 37.64672660827637
         }
     }
 }
