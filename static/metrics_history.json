@@ -2,16 +2,130 @@
     "fireducks": {
         "session_1": {
             "processing_time": 8.940834522247314
+        },
+        "session_2": {
+            "processing_time": 12.307711124420166
+        },
+        "session_3": {
+            "processing_time": 14.345874309539795
+        },
+        "session_4": {
+            "processing_time": 11.274478435516357
+        },
+        "session_5": {
+            "processing_time": 8.121166467666626
+        },
+        "session_6": {
+            "processing_time": 12.792031526565552
+        },
+        "session_7": {
+            "processing_time": 9.435230493545532
+        },
+        "session_8": {
+            "processing_time": 7.0782201290130615
+        },
+        "session_9": {
+            "processing_time": 7.027488708496094
+        },
+        "session_10": {
+            "processing_time": 19.74406123161316
+        },
+        "session_11": {
+            "processing_time": 9.486784219741821
+        },
+        "session_12": {
+            "processing_time": 12.065349578857422
+        },
+        "session_13": {
+            "processing_time": 15.33439564704895
+        },
+        "session_14": {
+            "processing_time": 13.08479928970337
+        },
+        "session_15": {
+            "processing_time": 9.861858606338501
         }
     },
     "pandas": {
         "session_1": {
             "processing_time": 21.414035081863403
+        },
+        "session_2": {
+            "processing_time": 28.49599838256836
+        },
+        "session_3": {
+            "processing_time": 24.404608011245728
+        },
+        "session_4": {
+            "processing_time": 20.79753303527832
+        },
+        "session_5": {
+            "processing_time": 20.70499539375305
+        },
+        "session_6": {
+            "processing_time": 27.516148328781128
+        },
+        "session_7": {
+            "processing_time": 17.358230352401733
+        },
+        "session_8": {
+            "processing_time": 36.97711157798767
+        },
+        "session_9": {
+            "processing_time": 24.812998294830322
+        },
+        "session_10": {
+            "processing_time": 21.897512674331665
+        },
+        "session_11": {
+            "processing_time": 17.55526900291443
+        },
+        "session_12": {
+            "processing_time": 24.980486392974854
+        },
+        "session_13": {
+            "processing_time": 24.054950714111328
         }
     },
     "polars": {
         "session_1": {
             "processing_time": 49.05445981025696
+        },
+        "session_2": {
+            "processing_time": 55.707783937454224
+        },
+        "session_3": {
+            "processing_time": 34.1977698802948
+        },
+        "session_4": {
+            "processing_time": 32.249873638153076
+        },
+        "session_5": {
+            "processing_time": 31.899962902069092
+        },
+        "session_6": {
+            "processing_time": 41.61353874206543
+        },
+        "session_7": {
+            "processing_time": 53.67367744445801
+        },
+        "session_8": {
+            "processing_time": 48.23432159423828
+        },
+        "session_9": {
+            "processing_time": 35.033629417419434
+        },
+        "session_10": {
+            "processing_time": 43.481125831604004
+        },
+        "session_11": {
+            "processing_time": 39.37776184082031
+        },
+        "session_12": {
+            "processing_time": 43.8556227684021
+        },
+        "session_13": {
+            "processing_time": 45.720422983169556
         }
     }
 }

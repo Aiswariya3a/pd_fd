@@ -1,66 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polars Engagement Report</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polars Processing Metrics</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <script>
+      // Function to interpolate between two colors
+      function interpolateColor(color1, color2, factor) {
+        var result = color1.slice();
+        for (var i = 0; i < 3; i++) {
+          result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+        }
+        return result;
+      }
+      // Convert RGB array to HEX string
+      function rgbToHex(rgb) {
+        return (
+          "#" +
+          rgb
+            .map(function (x) {
+              var hex = x.toString(16);
+              return hex.length === 1 ? "0" + hex : hex;
+            })
+            .join("")
+        );
+      }
+      // Determine color based on percentage:
+      // 0% = green, 50% = yellow, 100% = red.
+      function getColor(percent) {
+        var colorGreen = [46, 204, 113]; // #2ecc71
+        var colorYellow = [241, 196, 15]; // #f1c40f
+        var colorRed = [231, 76, 60]; // #e74c3c
+        if (percent <= 50) {
+          var factor = percent / 50;
+          var interpolated = interpolateColor(colorGreen, colorYellow, factor);
+          return rgbToHex(interpolated);
+        } else {
+          var factor = (percent - 50) / 50;
+          var interpolated = interpolateColor(colorYellow, colorRed, factor);
+          return rgbToHex(interpolated);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", function () {
+        // Get processing time from the template (in seconds)
+        var processingTime = Number("{{ total_chunk_time }}");
+        var maxTime = 50; // Maximum time threshold
+        var percentage = Math.min((processingTime / maxTime) * 100, 100);
+        var progressBar = document.getElementById("progressBarFiller");
+        progressBar.style.width = percentage + "%";
+        progressBar.style.backgroundColor = getColor(percentage);
+
+        // Update annotation text based on the percentage
+        var annotation = document.getElementById("progressBarAnnotation");
+        annotation.textContent =
+          percentage <= 25
+            ? "Very Fast"
+            : percentage <= 50
+            ? "Somewhat Fast"
+            : percentage <= 75
+            ? "Average Speed"
+            : percentage < 100
+            ? "Slow"
+            : "Very Slow";
+      });
+    </script>
+    <style>
+      /* Progress Bar Styling */
+      .progress-bar-container {
+        width: 100%;
+        max-width: 600px;
+        height: 30px;
+        background-color: #ddd;
+        border-radius: 15px;
+        overflow: hidden;
+        margin: 20px auto;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        position: relative;
+      }
+      .progress-bar-filler {
+        height: 100%;
+        width: 0;
+        background-color: #2ecc71;
+        transition: width 0.5s ease-in-out;
+      }
+      .progress-bar-annotation {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        top: 0;
+        left: 0;
+        line-height: 30px;
+        font-weight: bold;
+        color: #2c3e50;
+        text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Polars Processing Metrics</h1>
+    </header>
     <div class="container">
-        <h1>Polars Engagement Report</h1>
-
-        <div class="score-summary">
-            <h2>Overall Engagement Score: <span class="highlight">{{ overall_score }}</span></h2>
+      <!-- Time Metrics Section -->
+      <section class="time-metrics">
+        <h2>Processing Time Metrics</h2>
+        <p>
+          <strong>Time taken for chunk processing:</strong>
+          <span class="highlight">{{ total_chunk_time }} seconds</span>
+        </p>
+        <div class="progress-bar-container">
+          <div class="progress-bar-filler" id="progressBarFiller"></div>
+          <div class="progress-bar-annotation" id="progressBarAnnotation"></div>
         </div>
+      </section>
 
-        <div class="scores-section">
-            <h3>Region-wise Engagement Scores:</h3>
-            <table class="scores-table">
-                <thead>
-                    <tr>
-                        <th>Region</th>
-                        <th>Engagement Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for region, score in region_scores.items() %}
-                    <tr>
-                        <td>{{ region }}</td>
-                        <td>{{ score }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+      <!-- Analysis Section -->
+      <section class="analysis-section">
+        <h2>Performance Analysis</h2>
+        <p>
+          The progress bar above indicates the current processing time relative
+          to a target of 50 seconds. A predominantly green bar indicates
+          excellent performance, while a transition towards yellow or red
+          suggests slower processing. Use these insights to compare performance
+          and identify potential areas for optimization.
+        </p>
+      </section>
 
-        <div class="scores-section">
-            <h3>Institution-wise Engagement Scores:</h3>
-            <table class="scores-table">
-                <thead>
-                    <tr>
-                        <th>Institution</th>
-                        <th>Engagement Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for institution, score in institution_scores.items() %}
-                    <tr>
-                        <td>{{ institution }}</td>
-                        <td>{{ score }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+      <!-- Engagement Context (Optional) -->
+      <section class="scores-section">
+        <h3>Region-wise Engagement Scores (for context):</h3>
+        <table class="scores-table">
+          <thead>
+            <tr>
+              <th>Region</th>
+              <th>Engagement Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for region, score in region_scores.items() %}
+            <tr>
+              <td>{{ region }}</td>
+              <td>{{ score }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
 
-        <div class="time-metrics">
-            <h2>Time Metrics:</h2>
-            <p>
-                <strong>Time taken for chunk processing:</strong>
-                <span class="highlight">{{ total_chunk_time }} seconds</span>
-            </p>
-        </div>
+      <section class="scores-section">
+        <h3>Institution-wise Engagement Scores (for context):</h3>
+        <table class="scores-table">
+          <thead>
+            <tr>
+              <th>Institution</th>
+              <th>Engagement Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for institution, score in institution_scores.items() %}
+            <tr>
+              <td>{{ institution }}</td>
+              <td>{{ score }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
     </div>
-</body>
+  </body>
 </html>

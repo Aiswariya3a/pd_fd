@@ -1,21 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Engagement Report Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <div class="container">
-    <h1>Engagement Report Dashboard</h1>
-    <div class="report-links">
-      <a href="{{ url_for('fireducks_report') }}" class="btn">FireDucks Report</a>
-      <a href="{{ url_for('pandas_report') }}" class="btn">Pandas Report</a>
-      <a href="{{ url_for('polars_report') }}" class="btn">Polars Report</a>
-      <a href="{{ url_for('run_all_tests') }}" class="btn">Run All Tests</a>
-      <a href="{{ url_for('metrics_chart') }}" class="btn">Chart Metrics</a>
-    </div>
-  </div>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pd_Fd</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo"><a href="https://github.com/Aiswariya3a/pd_fd" target="_blank"
+          >pd_fd</a></div>
+        <ul class="nav-links">
+          <!-- Linking to the official documentation pages -->
+          <li>
+            <a href="https://fireducks-dev.github.io" target="_blank"
+              >FireDucks Docs</a
+            >
+          </li>
+          <li>
+            <a href="https://pandas.pydata.org/docs/" target="_blank"
+              >Pandas Docs</a
+            >
+          </li>
+          <li>
+            <a href="https://docs.pola.rs" target="_blank">Polars Docs</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="hero">
+        <h1>Data Processing Benchmark</h1>
+        <p>
+          Evaluate and compare the performance of leading data processing libraries—Pandas, Polars, and FireDucks.
+          Our platform provides real-time metrics and comprehensive benchmark reports to help you determine the optimal
+          solution for large-scale data analysis. Leverage actionable insights to enhance your data processing workflows.
+        </p>
+        <a href="{{ url_for('run_all_tests') }}" class="btn hero-btn">Run All Benchmarks</a>&nbsp;&nbsp;
+        <a href="{{ url_for('metrics_chart') }}" class="btn hero-btn2">Metrics Chart</a>
+      </div>        
+    </header>
+    <main>
+      <section class="features">
+        <h2>Our Features</h2>
+        <div class="feature-cards">
+          <div class="card">
+            <h3>Detailed Reports</h3>
+            <p>
+              Access comprehensive, framework-specific reports breaking down
+              engagement scores by region and institution.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Real-Time Metrics</h3>
+            <p>
+              Monitor processing times with interactive charts that update
+              automatically every few seconds.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Framework Comparison</h3>
+            <p>
+              Compare FireDucks, Pandas, and Polars side-by-side to determine
+              the optimal solution for large-scale data processing.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="about">
+        <h2>About the Data used</h2>
+        <p>
+          This dashboard provides quick and reliable performance insights across
+          various data processing frameworks, including FireDucks, Pandas, and
+          Polars. It allows you to run individual tests or all tests at once,
+          offering a comprehensive comparison of processing speeds and
+          engagement metrics.
+        </p>
+        <div class="dataset-details">
+          <h3>Dataset Description</h3>
+          <p>
+            The dataset utilized in this study is a CSV file containing
+            attributes related to face recognition and student engagement across
+            various colleges. Its primary objective is to compute the engagement
+            score of students by analyzing facial expressions and head
+            positioning in different classroom zones. This data is crucial for
+            evaluating engagement levels across diverse institutions using
+            real-time facial analysis.
+          </p>
+          <h3>Dataset Columns & Descriptions</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Column Name</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>face_id</td>
+                <td>Unique identifier for each detected face</td>
+              </tr>
+              <tr>
+                <td>region</td>
+                <td>Geographical region where the college is located</td>
+              </tr>
+              <tr>
+                <td>college_name</td>
+                <td>Name of the college</td>
+              </tr>
+              <tr>
+                <td>zone</td>
+                <td>Student's seating position (e.g., front, middle, back)</td>
+              </tr>
+              <tr>
+                <td>emotion</td>
+                <td>Detected emotion (e.g., happy, neutral, distracted)</td>
+              </tr>
+              <tr>
+                <td>confidence</td>
+                <td>Confidence score of the emotion detection model</td>
+              </tr>
+              <tr>
+                <td>created_at</td>
+                <td>Timestamp when the data was recorded</td>
+              </tr>
+              <tr>
+                <td>position.x1, position.y1, position.x2, position.y2</td>
+                <td>Bounding box coordinates of the detected face</td>
+              </tr>
+              <tr>
+                <td>position.center_x, position.center_y</td>
+                <td>Center coordinates of the detected face</td>
+              </tr>
+              <tr>
+                <td>pose.pitch, pose.yaw, pose.roll</td>
+                <td>Head pose estimation values</td>
+              </tr>
+              <tr>
+                <td>pose.confidence</td>
+                <td>Confidence score of the head pose estimation</td>
+              </tr>
+            </tbody>
+          </table>
+          <h3>Significance of the Dataset</h3>
+          <p>
+            This dataset plays a critical role in understanding and quantifying
+            student engagement by analyzing facial expressions and head
+            movements. It supports various educational technology applications,
+            including automated engagement tracking, classroom behavior
+            analysis, and real-time feedback systems. Leveraging advanced
+            computer vision and AI techniques, it provides educators and
+            researchers with insights into student attentiveness and engagement
+            patterns during lectures.
+          </p>
+          <p>
+            Moreover, the dataset serves as a benchmark for evaluating the
+            efficiency of vectorized operations in high-performance data
+            analysis. This dashboard compares the performance of FireDucks,
+            Pandas, and Polars in executing full dataset operations—assessing
+            both row-wise and column-wise operations— to determine their
+            effectiveness in handling large-scale data processing tasks.
+          </p>
+        </div>
+      </section>
+
+      <section class="report-links-section">
+        <h2>Run Individual Reports</h2>
+        <div class="report-links">
+          <a href="{{ url_for('fireducks_report') }}" class="btn"
+            >FireDucks Report</a
+          >
+          <a href="{{ url_for('pandas_report') }}" class="btn">Pandas Report</a>
+          <a href="{{ url_for('polars_report') }}" class="btn">Polars Report</a>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <p>&copy; 2025 pd_fd. All Rights Reserved.</p>
+    </footer>
+  </body>
 </html>

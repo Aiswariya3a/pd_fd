@@ -3,12 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Real-Time Metrics</title>
+    <title>Real-Time Metrics & Analysis</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <style>
+      /* Additional styling for the analysis section */
+      .analysis-section {
+        max-width: 800px;
+        margin: 30px auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .analysis-section h2 {
+        text-align: center;
+        color: #2c3e50;
+      }
+      .analysis-section p {
+        font-size: 1.1em;
+        color: #34495e;
+        text-align: justify;
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -19,6 +39,12 @@
       <canvas id="metricsChart" width="400" height="250"></canvas>
     </div>
 
+    <!-- Analysis Section -->
+    <section class="analysis-section">
+      <h2>Performance Analysis</h2>
+      <p id="analysis-text">Loading analysis...</p>
+    </section>
+
     <script>
       async function fetchMetrics() {
         const response = await fetch("/get_metrics");
@@ -28,47 +54,51 @@
 
       function updateChart(
         chart,
-        fireducksLabels,
-        fireducksData,
-        pandasLabels,
-        pandasData,
-        polarsLabels,
-        polarsData
+        fdLabels,
+        fdData,
+        pdLabels,
+        pdData,
+        polLabels,
+        polData
       ) {
-        // Use FireDucks labels as the x-axis (assuming all have similar session keys)
-        chart.data.labels = fireducksLabels;
-        chart.data.datasets[0].data = fireducksData;
-        chart.data.datasets[1].data = pandasData;
-        chart.data.datasets[2].data = polarsData;
+        // Use FireDucks labels as x-axis (assuming all are similar)
+        chart.data.labels = fdLabels;
+        chart.data.datasets[0].data = fdData;
+        chart.data.datasets[1].data = pdData;
+        chart.data.datasets[2].data = polData;
         chart.update();
+      }
+
+      function calculateAverage(dataArray) {
+        if (dataArray.length === 0) return 0;
+        const sum = dataArray.reduce((acc, val) => acc + val, 0);
+        return sum / dataArray.length;
       }
 
       async function renderChart() {
         const metrics = await fetchMetrics();
 
-        // Extract FireDucks metrics
-        const fireducksLabels = Object.keys(metrics.fireducks);
-        const fireducksData = fireducksLabels.map(
-          (session) => metrics.fireducks[session].processing_time
+        // If metrics.fireducks, metrics.pandas, and metrics.polars are arrays
+        const fireducksLabels = metrics.fireducks.map((item) => item.session);
+        const fireducksData = metrics.fireducks.map((item) =>
+          Number(item.processing_time)
         );
 
-        // Extract Pandas metrics
-        const pandasLabels = Object.keys(metrics.pandas);
-        const pandasData = pandasLabels.map(
-          (session) => metrics.pandas[session].processing_time
+        const pandasLabels = metrics.pandas.map((item) => item.session);
+        const pandasData = metrics.pandas.map((item) =>
+          Number(item.processing_time)
         );
 
-        // Extract Polars metrics
-        const polarsLabels = Object.keys(metrics.polars);
-        const polarsData = polarsLabels.map(
-          (session) => metrics.polars[session].processing_time
+        const polarsLabels = metrics.polars.map((item) => item.session);
+        const polarsData = metrics.polars.map((item) =>
+          Number(item.processing_time)
         );
 
         const ctx = document.getElementById("metricsChart").getContext("2d");
         const metricsChart = new Chart(ctx, {
           type: "line",
           data: {
-            labels: fireducksLabels, // Using FireDucks labels as the x-axis
+            labels: fireducksLabels, // Using FireDucks session labels as x-axis
             datasets: [
               {
                 label: "FireDucks Processing Time",
@@ -101,39 +131,78 @@
             scales: {
               y: {
                 beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Seconds",
+                },
               },
             },
           },
         });
 
-        // Update the chart every 5 seconds
+        function updateAnalysis() {
+          const avgFD = calculateAverage(fireducksData);
+          const avgPD = calculateAverage(pandasData);
+          const avgPol = calculateAverage(polarsData);
+          let analysisText = "On average, ";
+          analysisText += `FireDucks took ${avgFD.toFixed(2)} seconds, `;
+          analysisText += `Pandas took ${avgPD.toFixed(2)} seconds, and `;
+          analysisText += `Polars took ${avgPol.toFixed(
+            2
+          )} seconds to process the data. `;
+          if (avgFD < avgPD && avgFD < avgPol) {
+            analysisText +=
+              "This indicates that FireDucks is currently the fastest framework.";
+          } else if (avgPD < avgFD && avgPD < avgPol) {
+            analysisText +=
+              "This indicates that Pandas is currently the fastest framework.";
+          } else if (avgPol < avgFD && avgPol < avgPD) {
+            analysisText +=
+              "This indicates that Polars is currently the fastest framework.";
+          } else {
+            analysisText += "The processing times are quite similar.";
+          }
+          document.getElementById("analysis-text").textContent = analysisText;
+        }
+
+        // Initial analysis update
+        updateAnalysis();
+
+        // Update the chart and analysis every 5 seconds
         setInterval(async () => {
           const newMetrics = await fetchMetrics();
 
-          const newFireducksLabels = Object.keys(newMetrics.fireducks);
-          const newFireducksData = newFireducksLabels.map(
-            (session) => newMetrics.fireducks[session].processing_time
+          const newFDLabels = newMetrics.fireducks.map((item) => item.session);
+          const newFDData = newMetrics.fireducks.map((item) =>
+            Number(item.processing_time)
           );
 
-          const newPandasLabels = Object.keys(newMetrics.pandas);
-          const newPandasData = newPandasLabels.map(
-            (session) => newMetrics.pandas[session].processing_time
+          const newPDLabels = newMetrics.pandas.map((item) => item.session);
+          const newPDData = newMetrics.pandas.map((item) =>
+            Number(item.processing_time)
           );
 
-          const newPolarsLabels = Object.keys(newMetrics.polars);
-          const newPolarsData = newPolarsLabels.map(
-            (session) => newMetrics.polars[session].processing_time
+          const newPolLabels = newMetrics.polars.map((item) => item.session);
+          const newPolData = newMetrics.polars.map((item) =>
+            Number(item.processing_time)
           );
 
           updateChart(
             metricsChart,
-            newFireducksLabels,
-            newFireducksData,
-            newPandasLabels,
-            newPandasData,
-            newPolarsLabels,
-            newPolarsData
+            newFDLabels,
+            newFDData,
+            newPDLabels,
+            newPDData,
+            newPolLabels,
+            newPolData
           );
+
+          // Also update the analysis text based on new data
+          // Re-assign data arrays for analysis
+          fireducksData.splice(0, fireducksData.length, ...newFDData);
+          pandasData.splice(0, pandasData.length, ...newPDData);
+          polarsData.splice(0, polarsData.length, ...newPolData);
+          updateAnalysis();
         }, 5000);
       }
 
