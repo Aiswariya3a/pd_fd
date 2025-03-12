@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pandas Engagement Report</title>
+    <title>Polars Engagement Report</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Pandas Engagement Report</h1>
+        <h1>Polars Engagement Report</h1>
 
         <div class="score-summary">
             <h2>Overall Engagement Score: <span class="highlight">{{ overall_score }}</span></h2>
@@ -56,7 +56,10 @@
 
         <div class="time-metrics">
             <h2>Time Metrics:</h2>
-            <p><strong>Time taken for chunk processing:</strong> <span class="highlight">{{ total_chunk_time }} seconds</span></p>
+            <p>
+                <strong>Time taken for chunk processing:</strong>
+                <span class="highlight">{{ total_chunk_time }} seconds</span>
+            </p>
         </div>
     </div>
 </body>

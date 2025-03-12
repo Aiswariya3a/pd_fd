@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Engagement Reports Comparison</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>All Engagement Reports Comparison</h1>
+      <p>Comparing processing metrics across FireDucks, Pandas, and Polars</p>
+    </header>
+    <main>
+      <!-- FireDucks Report Section -->
+
+      <section class="report-section">
+        <h2>FireDucks Report</h2>
+        <div class="overall-score">
+          <h3>
+            Overall Engagement Score:
+            <span class="highlight">{{ fd_overall_score }}</span>
+          </h3>
+          <p>
+            Chunk Processing Time:
+            <span class="highlight">{{ fd_total_time }} seconds</span>
+          </p>
+        </div>
+
+        <div class="region-scores">
+          <h3>Region-wise Engagement Scores:</h3>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Region</th>
+                <th>Engagement Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for region, score in fd_region_scores.items() %}
+              <tr>
+                <td>{{ region }}</td>
+                <td>{{ score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="institution-scores">
+          <h3>Institution-wise Engagement Scores:</h3>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Institution</th>
+                <th>Engagement Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for institution, score in fd_institution_scores.items() %}
+              <tr>
+                <td>{{ institution }}</td>
+                <td>{{ score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Pandas Report Section -->
+      <section class="report-section">
+        <h2>Pandas Report</h2>
+        <div class="overall-score">
+          <h3>
+            Overall Engagement Score:
+            <span class="highlight">{{ pd_overall_score }}</span>
+          </h3>
+          <p>
+            Chunk Processing Time:
+            <span class="highlight">{{ pd_total_time }} seconds</span>
+          </p>
+        </div>
+        <div class="region-scores">
+          <h3>Region-wise Engagement Scores:</h3>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Region</th>
+                <th>Engagement Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for region, score in pd_region_scores.items() %}
+              <tr>
+                <td>{{ region }}</td>
+                <td>{{ score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="institution-scores">
+          <h3>Institution-wise Engagement Scores:</h3>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Institution</th>
+                <th>Engagement Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for institution, score in pd_institution_scores.items() %}
+              <tr>
+                <td>{{ institution }}</td>
+                <td>{{ score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Polars Report Section -->
+      <section class="report-section">
+        <h2>Polars Report</h2>
+        <div class="overall-score">
+          <h3>
+            Overall Engagement Score:
+            <span class="highlight">{{ pol_overall_score }}</span>
+          </h3>
+          <p>
+            Chunk Processing Time:
+            <span class="highlight">{{ pol_total_time }} seconds</span>
+          </p>
+        </div>
+        <div class="region-scores">
+          <h3>Region-wise Engagement Scores:</h3>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Region</th>
+                <th>Engagement Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for region, score in pol_region_scores.items() %}
+              <tr>
+                <td>{{ region }}</td>
+                <td>{{ score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="institution-scores">
+          <h3>Institution-wise Engagement Scores:</h3>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Institution</th>
+                <th>Engagement Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for institution, score in pol_institution_scores.items() %}
+              <tr>
+                <td>{{ institution }}</td>
+                <td>{{ score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <p>&copy; 2025 Engagement Report Dashboard</p>
+    </footer>
+  </body>
+</html>

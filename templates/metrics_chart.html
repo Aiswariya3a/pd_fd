@@ -15,9 +15,8 @@
       <h1>Real-Time Metrics Chart</h1>
     </header>
     <div class="chart-container">
-      <h2>FireDucks vs Pandas Processing Time</h2>
+      <h2>FireDucks vs Pandas vs Polars Processing Time</h2>
       <canvas id="metricsChart" width="400" height="250"></canvas>
-      <!-- Reduced size -->
     </div>
 
     <script>
@@ -32,34 +31,44 @@
         fireducksLabels,
         fireducksData,
         pandasLabels,
-        pandasData
+        pandasData,
+        polarsLabels,
+        polarsData
       ) {
+        // Use FireDucks labels as the x-axis (assuming all have similar session keys)
         chart.data.labels = fireducksLabels;
         chart.data.datasets[0].data = fireducksData;
         chart.data.datasets[1].data = pandasData;
+        chart.data.datasets[2].data = polarsData;
         chart.update();
       }
 
       async function renderChart() {
         const metrics = await fetchMetrics();
 
-        // FireDucks Metrics
+        // Extract FireDucks metrics
         const fireducksLabels = Object.keys(metrics.fireducks);
         const fireducksData = fireducksLabels.map(
           (session) => metrics.fireducks[session].processing_time
         );
 
-        // Pandas Metrics
+        // Extract Pandas metrics
         const pandasLabels = Object.keys(metrics.pandas);
         const pandasData = pandasLabels.map(
           (session) => metrics.pandas[session].processing_time
+        );
+
+        // Extract Polars metrics
+        const polarsLabels = Object.keys(metrics.polars);
+        const polarsData = polarsLabels.map(
+          (session) => metrics.polars[session].processing_time
         );
 
         const ctx = document.getElementById("metricsChart").getContext("2d");
         const metricsChart = new Chart(ctx, {
           type: "line",
           data: {
-            labels: fireducksLabels, // Use FireDucks session IDs as labels
+            labels: fireducksLabels, // Using FireDucks labels as the x-axis
             datasets: [
               {
                 label: "FireDucks Processing Time",
@@ -73,6 +82,14 @@
                 label: "Pandas Processing Time",
                 data: pandasData,
                 borderColor: "rgba(54, 162, 235, 1)",
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+              },
+              {
+                label: "Polars Processing Time",
+                data: polarsData,
+                borderColor: "rgba(75, 192, 192, 1)",
                 borderWidth: 2,
                 fill: false,
                 tension: 0.4,
@@ -103,12 +120,19 @@
             (session) => newMetrics.pandas[session].processing_time
           );
 
+          const newPolarsLabels = Object.keys(newMetrics.polars);
+          const newPolarsData = newPolarsLabels.map(
+            (session) => newMetrics.polars[session].processing_time
+          );
+
           updateChart(
             metricsChart,
             newFireducksLabels,
             newFireducksData,
             newPandasLabels,
-            newPandasData
+            newPandasData,
+            newPolarsLabels,
+            newPolarsData
           );
         }, 5000);
       }
